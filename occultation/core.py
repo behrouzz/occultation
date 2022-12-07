@@ -40,6 +40,8 @@ def angular_separation(r1, d1, r2, d2):
 
 
 def lonlat2cart(obs_loc):
+    if len(obs_loc)==2:
+        obs_loc = (obs_loc[0], obs_loc[1], 0)
     lon, lat, alt = obs_loc
     re = 6378.1366
     rp = 6356.7519

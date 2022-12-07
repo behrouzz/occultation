@@ -5,17 +5,28 @@ from occultation import *
 
 
 adr = 'C:/Moi/_py/Astronomy/Solar System/kernels/'
-files = ['naif0012.tls', 'pck00010.tpc', 'earth_latest_high_prec.bpc', 'de440_2030.bsp']
-kernels = [adr+i for i in files]
+
+kernels = [adr + 'naif0012.tls',
+           adr + 'pck00010.tpc',
+           adr + 'earth_latest_high_prec.bpc',
+           adr + 'de440s.bsp']
+
 bodies = [301, 4]
 
+obs_loc = (7.7521, 48.5734)
 
-obs_loc = (7.744083817548831, 48.58313582900411, 140)
-t_ini = datetime(2022, 12, 7)
+t_ini = datetime(2022, 12, 8)
 t0 = find_exact_t0(t_ini, bodies, obs_loc, kernels)
 
-time_window, ind_im, ind_em, pos_moon, pos_mars, size_moon, size_mars = \
-             get_occultation(bodies, obs_loc, t0, kernels)
+time_window, \
+ind_im, \
+ind_em, \
+pos_moon, \
+pos_mars, \
+size_moon, \
+size_mars = \
+        get_occultation(bodies, obs_loc, t0, kernels)
+
 
 t_im = time_window[ind_im]
 t_em = time_window[ind_em]
@@ -45,7 +56,6 @@ ax.set_xticks([x[0], x[ind_im], x[ind_em], x[-1]])
 ax.set_xticklabels([time_str[0], time_str[ind_im], time_str[ind_em], time_str[-1]])
 ax.set_xlabel('UTC Time (HH:MM)')
 ax.set_ylabel('Degree')
+plt.title('Lunar occultation of Mars, Strasbourg')
 plt.show()
 
-# p = np.array(pos_mars)
-# az, alt = p[:,1], p[:,2]

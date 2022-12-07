@@ -33,9 +33,9 @@ time_str = [str(i)[11:16] for i in time_window]
 
 fig, ax = plt.subplots()
 ax.scatter([0], [0], s=20, c='b')
-moon_circle = plt.Circle((0, 0), (size_moon.mean()/3600)/2, color='blue')
+moon_circle = plt.Circle((0, 0), size_moon.mean()/2, color='blue')
 for i in range(len(x)):
-    mars_circle = plt.Circle((x[i], y[i]), (size_mars[i]/3600)/2, color='red')
+    mars_circle = plt.Circle((x[i], y[i]), size_mars[i]/2, color='red')
     ax.add_patch(mars_circle)
 ax.add_patch(moon_circle)
 ax.axvline(x=x[ind_im], c='green', ls='-.')

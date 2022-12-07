@@ -10,6 +10,34 @@ RADIUS_MARS = 3389.5
 RADIUS_MOON = 1737.4
 
 
+def angular_separation(r1, d1, r2, d2):
+    """
+    Calculate angular separation between two point
+    Arguments
+    ---------
+        r1 (float): right ascension of the first point in degrees
+        d1 (float): declination of the first point in degrees
+        r2 (float): right ascension of the second point in degrees
+        d2 (float): declination of the second point in degrees
+    Returns
+    -------
+        angular sepration in degrees
+    """
+    r1 = (np.pi/180) * r1
+    d1 = (np.pi/180) * d1
+    r2 = (np.pi/180) * r2
+    d2 = (np.pi/180) * d2
+
+    radical = np.sqrt(
+        (np.cos(d2)**2)*(np.sin(r2-r1)**2) + ((np.cos(d1)*np.sin(d2) - np.sin(d1)*np.cos(d2)*np.cos(r2-r1))**2)
+        )
+    
+    kasr = radical / ( (np.sin(d1)*np.sin(d2)) + (np.cos(d1)*np.cos(d2)*np.cos(r2-r1)) )
+
+    sep = (180/np.pi) * np.arctan(kasr)
+    
+    return sep
+
 
 def lonlat2cart(obs_loc):
     lon, lat, alt = obs_loc
@@ -60,21 +88,36 @@ def create_range(t0, steps, dt):
 
 
 def find_exact_t0(t0, bodies, obs_loc, kernels):
-    # inner function
+    """
+    Finds the best moment of occulation based on an inial guess (t0)
+    """
+    
     def limit_range(t0, rng, n):
         t_win = [t0 + timedelta(seconds=i) for i in np.linspace(-rng, rng, n)]
-        d = np.zeros(len(t_win))
+        new_t_win = []
+        dist = []
         for i in range(len(t_win)):
-            [_,x1,y1], [_,x2,y2] = get_apparent_bodies(bodies, t_win[i], obs_loc, kernels)
-            d[i] = ((x1-x2)**2 + (y1-y2)**2) ** 0.5
-        ind = np.argmin(np.abs(d))
-        return t_win[ind]
+            [_,az1,alt1], [_,az2,alt2] = get_apparent_bodies(bodies, t_win[i], obs_loc, kernels)
+
+            if (alt1>0) and (alt2>0):
+                new_t_win.append(t_win[i])
+                d = angular_separation(az1, alt1, az2, alt2)
+                dist.append(d)
+        dist = np.array(dist)
+        if len(dist)>0:
+            ind = np.argmin(np.abs(dist))
+            return new_t_win[ind]
+        else:
+            return None
     
     t = limit_range(t0, 86400*2, 5)
-    t = limit_range(t, 3600*24, 24)
-    t = limit_range(t, 60*60, 60)
-    t = limit_range(t, 1*60, 60)
-    return t
+    if t is None:
+        return None
+    else:
+        t = limit_range(t, 3600*24, 24)
+        t = limit_range(t, 60*60, 60)
+        t = limit_range(t, 1*60, 60)
+        return t
 
 
 def get_occultation(bodies, obs_loc, t0, kernels, n_inter=100, dt=4000):
@@ -96,16 +139,15 @@ def get_occultation(bodies, obs_loc, t0, kernels, n_inter=100, dt=4000):
         dist_mars, az_mars, alt_mars = mars
         dist_moon, az_moon, alt_moon = moon
 
-        size_moon = (2 * np.arctan(RADIUS_MOON/dist_moon)*r2d) * 3600
-        size_mars = (2 * np.arctan(RADIUS_MARS/dist_mars)*r2d) * 3600
+        size_moon = (2 * np.arctan(RADIUS_MOON/dist_moon)*r2d)
+        size_mars = (2 * np.arctan(RADIUS_MARS/dist_mars)*r2d)
 
         ls_size_moon.append(size_moon)
         ls_size_mars.append(size_mars)
 
         dist_tang = (size_moon/2) + (size_mars/2)
 
-        d = ((az_mars-az_moon)**2 + (alt_mars-alt_moon)**2)**0.5
-        d = d*3600
+        d = angular_separation(az_moon, alt_moon, az_mars, alt_mars)
 
         delta.append(d - dist_tang)
 
